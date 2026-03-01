@@ -23,28 +23,28 @@ def open_cmd_window(title: str, script_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Open server.py and client.py in separate terminal windows"
+        description="在不同終端視窗開啟 server.py 與 client.py"
     )
     parser.add_argument(
         "--delay",
         type=float,
         default=1.0,
-        help="Seconds to wait before opening client window (default: 1.0)",
+        help="開啟 client 視窗前等待秒數（預設：1.0）",
     )
     args = parser.parse_args()
 
     if not SERVER_SCRIPT.exists() or not CLIENT_SCRIPT.exists():
-        print("server.py or client.py not found next to main.py")
+        print("在 main.py 同層找不到 server.py 或 client.py")
         sys.exit(1)
 
     open_cmd_window("Modbus Server", SERVER_SCRIPT)
     time.sleep(max(0.0, args.delay))
     open_cmd_window("Modbus Client", CLIENT_SCRIPT)
 
-    print("Opened two terminals:")
+    print("已開啟兩個終端視窗：")
     print("- Modbus Server")
     print("- Modbus Client")
-    print("Close this launcher window if not needed.")
+    print("若不需要，可關閉此啟動器視窗。")
 
 
 if __name__ == "__main__":
