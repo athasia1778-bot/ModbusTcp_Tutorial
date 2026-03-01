@@ -13,15 +13,15 @@ DATABANK = DataBank()
 def print_help() -> None:
     print(
         """
-Commands:
-  help                       Show this help
-  show hr <start> <count>    Show holding registers
-  show coil <start> <count>  Show coils
-  set hr <addr> <value>      Set one holding register
-  set coil <addr> <0|1>      Set one coil
-    auto_update coil <addr>    Toggle one coil every 5 seconds
-    stop_auto_update           Stop auto coil update
-  quit                       Stop server
+指令：
+    help                       顯示說明
+    show hr <start> <count>    顯示保持暫存器
+    show coil <start> <count>  顯示線圈
+    set hr <addr> <value>      設定一個保持暫存器
+    set coil <addr> <0|1>      設定一個線圈
+    auto_update coil <addr>    每 5 秒自動切換線圈
+    stop_auto_update           停止自動更新線圈
+    quit                       停止伺服器
 """.strip()
     )
 
@@ -29,7 +29,7 @@ Commands:
 def show_holding_registers(start: int, count: int) -> None:
     values = DATABANK.get_holding_registers(start, count)
     if values is None:
-        print("Invalid HR range")
+        print("HR 範圍無效")
         return
     print(f"HR[{start}:{start + count}] = {values}")
 
@@ -37,19 +37,19 @@ def show_holding_registers(start: int, count: int) -> None:
 def show_coils(start: int, count: int) -> None:
     values = DATABANK.get_coils(start, count)
     if values is None:
-        print("Invalid coil range")
+        print("Coil 範圍無效")
         return
     print(f"Coil[{start}:{start + count}] = {values}")
 
 
 def set_holding_register(addr: int, value: int) -> None:
     ok = DATABANK.set_holding_registers(addr, [value])
-    print("OK" if ok else "Write failed")
+    print("成功" if ok else "寫入失敗")
 
 
 def set_coil(addr: int, value: int) -> None:
     ok = DATABANK.set_coils(addr, [bool(value)])
-    print("OK" if ok else "Write failed")
+    print("成功" if ok else "寫入失敗")
 
 
 def start_auto_update_coil(
@@ -61,14 +61,14 @@ def start_auto_update_coil(
 
     def worker() -> None:
         current = 0
-        print(f"Auto update started for coil {addr} (every 5 seconds)")
+        print(f"已啟用自動更新 coil {addr}（每 5 秒）")
         while not stop_event.is_set():
             current = 0 if current == 1 else 1
             ok = DATABANK.set_coils(addr, [bool(current)])
             if ok:
                 print(f"[AUTO] coil[{addr}] -> {current}")
             else:
-                print(f"[AUTO] write failed for coil[{addr}]")
+                print(f"[AUTO] 寫入失敗：coil[{addr}]")
 
             if stop_event.wait(5.0):
                 break
@@ -93,7 +93,7 @@ def stop_auto_update_coil(
         thread.join(timeout=1.0)
 
     if state.get("stop_event") is not None or state.get("thread") is not None:
-        print("Auto update stopped")
+        print("已停止自動更新")
 
     state["stop_event"] = None
     state["thread"] = None
@@ -112,8 +112,8 @@ def main() -> None:
     DATABANK.set_coils(0, [False, True, False, True, False])
 
     server.start()
-    print(f"Modbus TCP server started on {HOST}:{PORT}")
-    print("Try with client.py in another terminal.")
+    print(f"Modbus TCP 伺服器已啟動：{HOST}:{PORT}")
+    print("請在另一個終端機執行 client.py。")
     print_help()
 
     try:
@@ -138,7 +138,7 @@ def main() -> None:
                 elif area == "coil":
                     show_coils(start, count)
                 else:
-                    print("Area must be hr or coil")
+                    print("區域必須是 hr 或 coil")
                 continue
 
             if cmd == "set" and len(parts) == 4:
@@ -147,17 +147,17 @@ def main() -> None:
                     set_holding_register(addr, value)
                 elif area == "coil":
                     if value not in (0, 1):
-                        print("Coil value must be 0 or 1")
+                        print("Coil 值必須是 0 或 1")
                         continue
                     set_coil(addr, value)
                 else:
-                    print("Area must be hr or coil")
+                    print("區域必須是 hr 或 coil")
                 continue
 
             if cmd == "auto_update" and len(parts) == 3:
                 area, addr = parts[1], int(parts[2])
                 if area != "coil":
-                    print("Only coil is supported: auto_update coil <addr>")
+                    print("僅支援 coil：auto_update coil <addr>")
                     continue
                 start_auto_update_coil(auto_update_state, addr)
                 continue
@@ -166,13 +166,13 @@ def main() -> None:
                 stop_auto_update_coil(auto_update_state)
                 continue
 
-            print("Invalid command. Type 'help'.")
+            print("無效指令，請輸入 help。")
     except KeyboardInterrupt:
         pass
     finally:
         stop_auto_update_coil(auto_update_state)
         server.stop()
-        print("Server stopped")
+        print("伺服器已停止")
 
 
 if __name__ == "__main__":

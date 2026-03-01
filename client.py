@@ -11,37 +11,37 @@ PORT = 5020
 def print_help() -> None:
     print(
         """
-Commands:
-  help                       Show this help
-  read hr <start> <count>    Read holding registers
-  read coil <start> <count>  Read coils
-  write hr <addr> <value>    Write one holding register
-  write coil <addr> <0|1>    Write one coil
-    auto_read coil <s> <n>     Read coils every 5 seconds
-    stop_auto_read             Stop auto coil reading
-  quit                       Exit client
+指令：
+    help                       顯示說明
+    read hr <start> <count>    讀取保持暫存器
+    read coil <start> <count>  讀取線圈
+    write hr <addr> <value>    寫入一個保持暫存器
+    write coil <addr> <0|1>    寫入一個線圈
+    auto_read coil <s> <n>     每 5 秒讀取線圈
+    stop_auto_read             停止自動讀取線圈
+    quit                       離開用戶端
 """.strip()
     )
 
 
 def read_holding_registers(client: ModbusClient, start: int, count: int) -> None:
     values = client.read_holding_registers(start, count)
-    print(values if values is not None else "Read failed")
+    print(values if values is not None else "讀取失敗")
 
 
 def read_coils(client: ModbusClient, start: int, count: int) -> None:
     values = client.read_coils(start, count)
-    print(values if values is not None else "Read failed")
+    print(values if values is not None else "讀取失敗")
 
 
 def write_holding_register(client: ModbusClient, addr: int, value: int) -> None:
     ok = client.write_single_register(addr, value)
-    print("OK" if ok else "Write failed")
+    print("成功" if ok else "寫入失敗")
 
 
 def write_coil(client: ModbusClient, addr: int, value: int) -> None:
     ok = client.write_single_coil(addr, bool(value))
-    print("OK" if ok else "Write failed")
+    print("成功" if ok else "寫入失敗")
 
 
 def start_auto_read_coils(
@@ -55,11 +55,11 @@ def start_auto_read_coils(
     stop_event = threading.Event()
 
     def worker() -> None:
-        print(f"Auto read started for coils {start}..{start + count - 1} (every 5 seconds)")
+        print(f"已啟用自動讀取 coils {start}..{start + count - 1}（每 5 秒）")
         while not stop_event.is_set():
             values = client.read_coils(start, count)
             if values is None:
-                print(f"[AUTO] read failed for coil[{start}:{start + count}]")
+                print(f"[AUTO] 讀取失敗：coil[{start}:{start + count}]")
             else:
                 print(f"[AUTO] coil[{start}:{start + count}] = {values}")
 
@@ -86,7 +86,7 @@ def stop_auto_read_coils(
         thread.join(timeout=1.0)
 
     if state.get("stop_event") is not None or state.get("thread") is not None:
-        print("Auto read stopped")
+        print("已停止自動讀取")
 
     state["range"] = None
     state["stop_event"] = None
@@ -101,7 +101,7 @@ def main() -> None:
         "thread": None,
     }
 
-    print(f"Modbus TCP client ready for {HOST}:{PORT}")
+    print(f"Modbus TCP 用戶端已就緒：{HOST}:{PORT}")
     print_help()
 
     try:
@@ -126,7 +126,7 @@ def main() -> None:
                 elif area == "coil":
                     read_coils(client, start, count)
                 else:
-                    print("Area must be hr or coil")
+                    print("區域必須是 hr 或 coil")
                 continue
 
             if cmd == "write" and len(parts) == 4:
@@ -135,17 +135,17 @@ def main() -> None:
                     write_holding_register(client, addr, value)
                 elif area == "coil":
                     if value not in (0, 1):
-                        print("Coil value must be 0 or 1")
+                        print("Coil 值必須是 0 或 1")
                         continue
                     write_coil(client, addr, value)
                 else:
-                    print("Area must be hr or coil")
+                    print("區域必須是 hr 或 coil")
                 continue
 
             if cmd == "auto_read" and len(parts) == 4:
                 area, start, count = parts[1], int(parts[2]), int(parts[3])
                 if area != "coil":
-                    print("Only coil is supported: auto_read coil <start> <count>")
+                    print("僅支援 coil：auto_read coil <start> <count>")
                     continue
                 start_auto_read_coils(auto_read_state, client, start, count)
                 continue
@@ -154,13 +154,13 @@ def main() -> None:
                 stop_auto_read_coils(auto_read_state)
                 continue
 
-            print("Invalid command. Type 'help'.")
+            print("無效指令，請輸入 help。")
     except KeyboardInterrupt:
         pass
     finally:
         stop_auto_read_coils(auto_read_state)
         client.close()
-        print("Client closed")
+        print("用戶端已關閉")
 
 
 if __name__ == "__main__":
